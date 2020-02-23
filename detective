@@ -1,4 +1,6 @@
 #include <iostream.h>
+#inlcude <array.h>
+
 
 /* loop through the input - it is an array of arrays */
 // Deal  with 2 arrays at a time 
