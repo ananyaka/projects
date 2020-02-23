@@ -1,0 +1,6 @@
+#include <iostream.h>
+
+/* loop through the input - it is an array of arrays */
+// Deal  with 2 arrays at a time 
+// Display whetehr prfect combination is possible or if you will have to make partial ones
+// Display answer
