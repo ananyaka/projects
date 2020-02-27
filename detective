@@ -1,8 +1,242 @@
-#include <iostream.h>
-#inlcude <array.h>
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 
 
-/* loop through the input - it is an array of arrays */
-// Deal  with 2 arrays at a time 
-// Display whetehr prfect combination is possible or if you will have to make partial ones
-// Display answer
+public class DetectiveLast {	
+	//Function that runs a for loop for an ArrayList from 0 to its end and adds the contents to newStory
+	public static void forLoop(ArrayList<String> array, ArrayList<String> newStory) {
+		for(int i =0 ; i <array.size(); i++) {
+			newStory.add(array.get(i));
+		}
+	}
+
+	/* 
+	 * This function is called when found1 is true
+	 * It adds stuff to newStory
+	 */
+	public static void whenFound1(ArrayList<String> newStory,ArrayList<String> story, ArrayList<String> before, ArrayList<String> after, int indexOfWord2InStory) {
+		forLoop(before, newStory);
+		//original story after word
+		for(int k = indexOfWord2InStory; k<story.size() ; k++) {
+			newStory.add(story.get(k));		
+		}
+		forLoop(after,newStory);	
+	}
+
+	/* 
+	 * This function is called when found2 is true
+	 * It adds stuff to newStory
+	 */
+	public static void whenFound2(boolean partialMerge,ArrayList<String> wordsInBetween, ArrayList<String> newStory,ArrayList<String> story, ArrayList<String> before, ArrayList<String> after, int indexInStory, int indexOfWord2InStory) {
+		//before
+		forLoop(before,newStory);
+		//original story before word
+		for(int k=0; k<indexInStory +1 ; k++) {
+			newStory.add(story.get(k));							
+		}
+		if(!partialMerge) {
+			//between
+			forLoop(wordsInBetween, newStory);
+		}
+		//original story after word
+		for(int k = indexOfWord2InStory; k<story.size() ; k++) {
+			newStory.add(story.get(k));		
+		}
+		forLoop(after,newStory);
+	}
+
+	/* 
+	 * This function is called when no merge is possible at all.
+	 * It prints the message and returns the input without any modifications.
+	 */
+	public static void noMergePossible(ArrayList<ArrayList<String>> input) {
+		System.out.println("No Merge is Possible");
+		System.out.println(input);
+	}
+
+	/*
+	 * This function is called when either a full or partial merge is possible.
+	 * It checks which merge is possible and then prints the required stuff.
+	 */
+	public static void MergePossible(boolean isOneStory, ArrayList<ArrayList<String>> input,ArrayList<ArrayList<String>> answerArray,ArrayList<String> story, ArrayList<String> before1, String firstWord, String secondWord) {
+		if(isOneStory) {
+			System.out.println("Merge Possible");
+			answerArray.add(story);
+		}
+		else {
+			System.out.println("Partial Merge Possible");
+			for (int i = 0; i<input.size(); i++) {
+				ArrayList<String> newStory = new ArrayList<String>();
+				forLoop(before1,newStory);
+				for(int j = 0; j<input.get(i).indexOf(firstWord) +1 ; j++) {
+					if(!(newStory.contains(input.get(i).get(j)))) {
+						newStory.add(input.get(i).get(j));
+					}
+				}
+				for(int j = input.get(i).indexOf(firstWord) + 1; j<input.get(i).indexOf(secondWord); j++) {
+					newStory.add(input.get(i).get(j));
+				}
+				for(int j = story.indexOf(secondWord); j<story.size(); j++) {
+					newStory.add(story.get(j));
+				}
+				if(!answerArray.contains(newStory)) {
+					answerArray.add(newStory);
+				}
+			}
+		}
+		System.out.println(answerArray);
+	}
+
+	public static void main (String[] args) throws FileNotFoundException, IOException {
+		FileReader fr = new FileReader("example3.json");
+		BufferedReader br = new BufferedReader(fr);
+		br.readLine();
+		String line = br.readLine();
+		ArrayList<ArrayList<String>> input = new ArrayList<ArrayList<String>>();
+		while(line!=null) {
+			if(!line.substring(0,1).equals("]")) {
+				line = line.replace("[", "");
+				line = line.replace("]", "");
+				line = line.trim();
+				String[] words = line.split(",");
+				ArrayList<String> array = new ArrayList<String>();
+				for(String s: words) {
+					s = s.replaceAll("\"","");
+					s = s.trim();
+					if(s.length()>1)
+						array.add(s);
+				}
+				input.add(array);
+				line = br.readLine();
+			}
+			else
+				line = br.readLine();
+		}
+		//System.out.println(input);
+		ArrayList<String> before1 = new ArrayList<String>();
+		// We name the first ArrayList in input as story
+		ArrayList<String> story = input.get(0);
+		//If isOneStory is true then full merge is possible, else partial merge
+		boolean isOneStory = true;
+		// possible signifies if any merge is possible at all. If it is false - no merge is possible, else either full or partial is possible
+		boolean possible = false;
+		//This is what is printed in case any kind of merging is possible. If no merging is possible, the input is printed as it is.
+		ArrayList<ArrayList<String>> answerArray = new ArrayList<ArrayList<String>>();
+		//This ArrayList contains words that come between 2 common words in 2 separate ArrayLists, this is essential for merging
+		ArrayList<String> wordsInBetween = new ArrayList<String>();
+		//Store the first and second words that we find
+		String firstWord = "", secondWord = "";
+		// Main for loop that runs through the arrays in the input (as the input is an array of arrays)
+		for(int i = 1; i<input.size(); i++) {
+			//Before and after stores the words that may come before and after the common words respectively
+			ArrayList<String> before = new ArrayList<String>();
+			ArrayList<String> after = new ArrayList<String>();
+			// Index of the first word in the story
+			int indexInStory = 0;
+			// Index of the second word in the story
+			int indexOfWord2InStory = 0;
+			boolean found1 = false, found2 = false, partialMerge = false;
+			//This loop runs within the ArrayList i in the input
+			for(int j =0; j<input.get(i).size() ; j++) {
+				// word stores the first common word between the ArrayList and story
+				String word = input.get(i).get(j);
+				// wordPos stores the position of word in the ArrayList
+				int wordPos = input.get(i).indexOf(word);
+				if(story.contains(word)) {
+					//we found 1 common word, hence found1 is true 
+					found1 = true;
+					// indexInStory stores the position of word in the story
+					indexInStory = story.indexOf(word);
+					//Going to find second common word now
+					for(int k = j+1; k<input.get(i).size() && !found2; k++) {
+						// word2 stores the second common word between the ArrayList and story
+						String word2 = input.get(i).get(k);
+						// wordPos2 stores the position of word2 in the ArrayList
+						int wordPos2 = input.get(i).indexOf(word2);
+						if(story.contains(word2)) {
+							//found 2 is now true as we found 2 common words now, and found1 is false
+							found1 = false;
+							found2 = true;
+							//possible is true as now we can have some sort of merge be possible
+							possible = true;
+							// indexOfWord2InStory stores the position of word2 in the story
+							indexOfWord2InStory = story.indexOf(word2);
+							/*
+							 * Statement to check if partial merge or not.
+							 * This one checks if there arent the same number of words between the common words 
+							 * in story and the other ArrayList. As that would mean we would need partial merge.
+							 */
+							if((indexOfWord2InStory - indexInStory) != (wordPos2 - wordPos)) {
+								/*
+								 * Checks if the 2 common words are consecutive in either of the 2 ArrayLists or not.
+								 * As then the difference of their indices would be 1.
+								 */
+								if(!((indexOfWord2InStory - indexInStory == 1) || (wordPos2 - wordPos ==1))) {
+									//Sets partial merge to true
+									partialMerge = true;
+									isOneStory = false;
+									firstWord = word;				
+									secondWord = word2;
+								} 
+							}
+							/*
+							 * Statement to check if partial merge or not
+							 * Checks if the word between the 2 common words is same or not.
+							 * If it is not the same, it is partial merge.
+							 */
+							else if ((!(story.get(indexOfWord2InStory +1).equals(input.get(i).get(wordPos +1))))) {
+								partialMerge = true;
+								isOneStory = false;
+								firstWord = word;				
+								secondWord = word2;
+							}
+							// Starts the loop back from where you found the second word (makes the second word the first word)
+							if(partialMerge) {
+								j = k-1;
+							}
+							// Sets j to what k currently is 
+							else {
+								j=k;
+							}
+						}
+						else {
+							//Adds to the wordsInBetween list if it is not the second word
+							wordsInBetween.add(word2);
+						}
+					}
+				}
+				//Adds to the before list
+				else if(!found1 && !found2) {
+					before.add(word);
+				}
+				//Adds to the after list
+				else if(found2) {
+					after.add(word);
+				}
+				before1 = before;
+			}
+			ArrayList<String> newStory = new ArrayList<String>();
+			if(found1) {
+				whenFound1(newStory, story, before, after, indexOfWord2InStory);			
+			} 
+			else if(found2) {
+				whenFound2(partialMerge, wordsInBetween, newStory, story, before, after, indexInStory, indexOfWord2InStory);
+			}
+			if(found1 || found2) {
+				story = newStory;
+			}
+		} 
+		//If any sort of merge is possible
+		if(possible) {
+			MergePossible(isOneStory,input,answerArray,story,before1,firstWord,secondWord);
+		}
+		//If no merge is possible at all
+		else {
+			noMergePossible(input);
+		}
+	}
+}
+
